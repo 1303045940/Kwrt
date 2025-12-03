@@ -276,51 +276,6 @@ jobs:
         # 验证
         echo "内核版本配置:"
         grep CONFIG_TARGET_LINUX_VERSION .config     
-        
-        # === 新增上传文件逻辑 ===
-       
-        echo "Uploading .config to repo..."
-        # 回到上级目录准备操作
-        cd ..
-        
-        # 设置repo及分支
-        REPO_URL="https://${ACCESS_TOKEN}@github.com/a1303045940/Kwrt.git"
-        BRANCH="main"
-        DIR=my_backup_repo
-        SUBDIR=R30B1
-    
-        git clone --single-branch --branch $BRANCH $REPO_URL $DIR
-        mkdir -p $DIR/$SUBDIR
-    
-        cp openwrt/.config $DIR/$SUBDIR/.config
-        #cp $DIR/$SUBDIR/1.config openwrt/.config
-        #cat openwrt/.config
-    
-        cd $DIR
-        git config user.name "GitHub Actions"
-        git config user.email "actions@github.com"
-    
-        git add $SUBDIR/.config
-    
-        if git diff --cached --quiet; then
-          echo "No changes to .config"
-        else
-          git commit -m "Auto-update $SUBDIR config by Actions [$(date +'%Y-%m-%d %H:%M:%S')]"
-          git pull origin $BRANCH --rebase
-          git push origin $BRANCH
-          echo "Config pushed successfully"
-        fi
-      env:
-        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-
-
-    - name: Cache
-      uses: stupidloud/cachewrtbuild@main
-      with:
-        ccache: 'true'
-        mixkey: ${{ matrix.target }}
-        clean: ${{ contains(github.event.action, 'nocache') }}
-        prefix: ${{ github.workspace }}/openwrt
     
     - name: Check space usage
       run: |
