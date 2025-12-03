@@ -11,6 +11,14 @@ name: Build OpenWrt
 on: 
   repository_dispatch:
 
+  # 新增：支持手动触发
+  workflow_dispatch:
+    inputs:
+      target:
+        description: '编译目标，例如 mediatek_filogic / x86_64'
+        required: true
+        default: 'mediatek_filogic'
+        
 env:
   REPO_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
   PPPOE_USERNAME: ${{ secrets.PPPOE_USERNAME }}
@@ -31,7 +39,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["${{ github.event.client_payload.target }}"]
+        #target: ["${{ github.event.client_payload.target }}"]
+        target:
+          - ${{ github.event_name == 'workflow_dispatch'
+                && github.event.inputs.target
+                || github.event.client_payload.target }}
         
     steps:
     - name: Checkout
@@ -255,7 +267,52 @@ jobs:
         fi
         make defconfig
         fi
-        cat .config
+        
+        sed -i '/CONFIG_TARGET_LINUX_VERSION/d' .config
+        sed -i '/CONFIG_KERNEL_GIT_CLONE_URI/d' .config
+        echo 'CONFIG_TARGET_LINUX_VERSION="6.6.116"' >> .config
+        echo 'CONFIG_KERNEL_GIT_CLONE_URI=""' >> .config
+        
+        # 验证
+        echo "内核版本配置:"
+        grep CONFIG_TARGET_LINUX_VERSION .config
+        
+        # === 新增上传文件逻辑 ===
+       
+        echo "Uploading .config to repo..."
+        # 回到上级目录准备操作
+        cd ..
+        
+        # 设置repo及分支
+        REPO_URL="https://${ACCESS_TOKEN}@github.com/a1303045940/Kwrt.git"
+        BRANCH="main"
+        DIR=my_backup_repo
+        SUBDIR=R30B1
+    
+        git clone --single-branch --branch $BRANCH $REPO_URL $DIR
+        mkdir -p $DIR/$SUBDIR
+    
+        cp openwrt/.config $DIR/$SUBDIR/.config
+        #cp $DIR/$SUBDIR/1.config openwrt/.config
+        #cat openwrt/.config
+    
+        cd $DIR
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
+        git add $SUBDIR/.config
+    
+        if git diff --cached --quiet; then
+          echo "No changes to .config"
+        else
+          git commit -m "Auto-update $SUBDIR config by Actions [$(date +'%Y-%m-%d %H:%M:%S')]"
+          git pull origin $BRANCH --rebase
+          git push origin $BRANCH
+          echo "Config pushed successfully"
+        fi
+      env:
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
 
     - name: Cache
       uses: stupidloud/cachewrtbuild@main
@@ -277,6 +334,25 @@ jobs:
     - name: SSH connection to Actions
       uses: kiddin9/debugger-action@master
       if: contains(github.event.action, 'ssh')
+
+
+      
+    - name: Show Device Model
+      run: |
+        cd openwrt
+        echo "1------------------------------------2"
+        echo "Current Device: ${{ matrix.target }}"
+        echo "1--------------------------------------2"
+        
+    - name: Show Detailed Target Info
+      run: |
+        cd openwrt
+        echo "2------------------------------------2"
+        echo "Target System: $(grep CONFIG_TARGET_BOARD .config | cut -d= -f2 | tr -d '\"')"
+        echo "Subtarget: $(grep CONFIG_TARGET_SUBTARGET .config | cut -d= -f2 | tr -d '\"')"
+        echo "Target Profile: $(grep CONFIG_TARGET_PROFILE .config | cut -d= -f2 | tr -d '\"')"
+        echo "2------------------------------------2"
+
 
     - name: Compile the firmware
       id: compile
@@ -324,26 +400,50 @@ jobs:
 
     - name: Create release
       id: create_release
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
+      # if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
       continue-on-error: true
       run: |
-        echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "[腾讯云] (https://dl.openwrt.ai/firmware/${{matrix.target}}/ ☁)\n" >> release.txt
+        echo -e "Openwrt-AutoBuild下载 🚀:\n" >> release.txt
+        #echo -e "[腾讯云] (https://dl.openwrt.ai/firmware/${{matrix.target}}/ ☁)\n" >> release.txt
         [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
         [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
         [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
+        
+    - name: Pack targets directory
+      run: |
+        cd openwrt/bin/
+        tar -czf ${{ github.workspace }}/targets.tar.gz targets/
+        echo "PACKED_TARGETS=${{ github.workspace }}/targets.tar.gz" >> $GITHUB_ENV
+        echo "✅ 打包完成: $(du -h ${{ github.workspace }}/targets.tar.gz | cut -f1)"
+    
+    - name: Upload firmware for release
+      uses: softprops/action-gh-release@v2
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        files: |
+          ${{ env.PACKED_TARGETS }}
+          ${{ env.FIRMWARE }}/*
+        name: ${{ env.date2 }} ${{ matrix.target }} ${{ github.event.repository.name }} ${{ env.EMOJI }}
+        tag_name: ${{ env.date }}_${{ matrix.target }}
+        body_path: release.txt
 
     - name: Upload firmware for release
       uses: softprops/action-gh-release@master
       continue-on-error: true
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
+      # if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
+        #GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
+        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 || secrets.GITHUB_TOKEN }}
       with:
         files: "${{ env.FIRMWARE }}/*"
-        name: ${{ env.date2 }} ${{matrix.target}} ${{ env.EMOJI }}
+        name: ${{ env.date2 }} ${{matrix.target}} ${{ github.event.repository.name }} ${{ env.EMOJI }}
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
+        make_latest: true          # 可选，确保这个 release 标记为最新
+        draft: false
+        prerelease: false
     
     - name: WeChat notification
       continue-on-error: true
@@ -368,9 +468,10 @@ jobs:
     - name: Remove old Releases
       uses: dev-drprasad/delete-older-releases@master
       continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
+      #if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
       with:
         keep_latest: 15
         delete_tags: true
       env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
+        #GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 }}
+        GITHUB_TOKEN: ${{ secrets.TOKEN_KIDDIN9 || secrets.GITHUB_TOKEN }}
