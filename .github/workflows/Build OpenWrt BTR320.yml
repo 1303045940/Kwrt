@@ -6,7 +6,7 @@
 # Blog: https://p3terx.com
 #=================================================
 
-name: Build OpenWrt HY3000
+name: Build OpenWrt BTR320
 
 on: 
   repository_dispatch:
@@ -355,7 +355,7 @@ jobs:
       # if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
       continue-on-error: true
       run: |
-        echo -e "OpenWrt HY3000下载 🚀:\n" >> release.txt
+        echo -e "OpenWrt BTR320固件源码下载 🚀:\n" >> release.txt
         #echo -e "[腾讯云] (https://dl.openwrt.ai/firmware/${{matrix.target}}/ ☁)\n" >> release.txt
         [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
         [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
