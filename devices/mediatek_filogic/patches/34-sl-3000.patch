@@ -6,23 +6,23 @@
  TARGET_DEVICES += zyxel_nwa50ax-pro
 +
 +define Device/sl_3000
-+  DEVICE_VENDOR := Philips
-+  DEVICE_MODEL := HY3000
++  DEVICE_VENDOR := Globitel
++  DEVICE_MODEL := BT-R320
 +  DEVICE_DTS := mt7981b-sl-3000
 +  DEVICE_DTS_DIR := ../dts
 +  SUPPORTED_DEVICES := sl,3000
-+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware f2fsck losetup mkf2fs kmod-fs-f2fs kmod-mmc
++  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware f2fsck losetup kmod-usb3 mkf2fs kmod-fs-f2fs kmod-mmc
 +  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 +endef
 +TARGET_DEVICES += sl_3000
 +
 +define Device/sl_3000-emmc
-+  DEVICE_VENDOR := Philips
-+  DEVICE_MODEL := HY3000
++  DEVICE_VENDOR := Globitel
++  DEVICE_MODEL := BT-R320
 +  DEVICE_DTS := mt7981b-sl-3000-emmc
 +  DEVICE_DTS_DIR := ../dts
 +  SUPPORTED_DEVICES := sl,3000-emmc
-+  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware f2fsck losetup mkf2fs kmod-fs-f2fs kmod-mmc
++  DEVICE_PACKAGES := kmod-mt7915e kmod-mt7981-firmware mt7981-wo-firmware f2fsck losetup mkf2fs kmod-usb3 kmod-fs-f2fs kmod-mmc
 +  IMAGE/sysupgrade.bin := sysupgrade-tar | append-metadata
 +endef
 +TARGET_DEVICES += sl_3000-emmc
