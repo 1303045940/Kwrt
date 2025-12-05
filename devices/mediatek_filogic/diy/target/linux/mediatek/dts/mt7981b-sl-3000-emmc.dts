@@ -8,7 +8,7 @@
 #include "mt7981.dtsi"
 
 / {
-	model = "Philips HY3000";
+	model = "Globitel BT-R320";
 	compatible = "sl,3000-emmc", "mediatek,mt7981";
 
 	aliases {
