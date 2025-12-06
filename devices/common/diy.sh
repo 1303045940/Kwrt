@@ -108,3 +108,19 @@ sed -i -e "s/set \${s}.country='\${country || ''}'/set \${s}.country='\${country
 
 rm -rf package/feeds/packages/jool
 
+
+# ... (你原本的最后一行 rm -rf ...)
+
+# =========================================================
+# 强制设置 root 密码的终极保险措施
+# =========================================================
+mkdir -p package/base-files/files/etc/uci-defaults
+cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-custom-password.sh
+#!/bin/sh
+# 强制将 root 密码重置为 "password"
+# 注意：这里使用的是 $5$ (SHA-256) 哈希
+sed -i 's|^root:[^:]*:|root:$5$a1grDqnDettfkcMO$27EoNRhxF4vASwsi4xjtQKrzS9bb0yytF6aUDDMtQV7:|' /etc/shadow
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-custom-password.sh
+
