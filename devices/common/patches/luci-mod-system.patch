@@ -5,7 +5,7 @@
  		fs.exec('/sbin/firstboot', [ '-r', '-y' ]);
  
 -		ui.awaitReconnect('192.168.1.1', 'openwrt.lan');
-+		ui.awaitReconnect('10.0.0.1', 'kwrt.lan');
++		ui.awaitReconnect('192.168.6.1', 'openwrt.lan');
  	},
  
  	handleRestore: function(ev) {
