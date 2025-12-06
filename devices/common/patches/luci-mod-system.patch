@@ -14,7 +14,7 @@
  				]);
  
 -				ui.awaitReconnect(window.location.host, '192.168.1.1', 'openwrt.lan');
-+				ui.awaitReconnect(window.location.host, '10.0.0.1', 'kwrt.lan');
++				ui.awaitReconnect(window.location.host, '192.168.6.1', 'openwrt.lan');
  			}, this))
  			.catch(function(e) { ui.addNotification(null, E('p', e.message)) })
  			.finally(function() { btn.firstChild.data = _('Upload archive...') });
