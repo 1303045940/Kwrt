@@ -28,6 +28,19 @@ sed -i "s/192.168.1/192.168.6/" package/base-files/files/bin/config_generate
 echo -e "password\npassword" | passwd root
 sed -i 's|^root:[^:]*:|root:$5$a1grDqnDettfkcMO$27EoNRhxF4vASwsi4xjtQKrzS9bb0yytF6aUDDMtQV7:|' package/base-files/files/etc/shadow
 
+
+# 创建自定义开机脚本，确保密码在最后被正确设置
+mkdir -p package/base-files/files/etc/uci-defaults
+cat << 'EOF' > package/base-files/files/etc/uci-defaults/99-custom-password.sh
+#!/bin/sh
+# 强制重置 root 密码为 password (对应的哈希)
+sed -i 's|^root:[^:]*:|root:$5$a1grDqnDettfkcMO$27EoNRhxF4vASwsi4xjtQKrzS9bb0yytF6aUDDMtQV7:|' /etc/shadow
+exit 0
+EOF
+chmod +x package/base-files/files/etc/uci-defaults/99-custom-password.sh
+
+
+
 wget -N https://github.com/immortalwrt/immortalwrt/raw/refs/heads/openwrt-24.10/package/kernel/linux/modules/video.mk -P package/kernel/linux/modules/
 wget -N https://github.com/immortalwrt/immortalwrt/raw/refs/heads/openwrt-24.10/package/network/utils/nftables/patches/002-nftables-add-fullcone-expression-support.patch -P package/network/utils/nftables/patches/
 wget -N https://github.com/immortalwrt/immortalwrt/raw/refs/heads/openwrt-24.10/package/network/utils/nftables/patches/001-drop-useless-file.patch -P package/network/utils/nftables/patches/
